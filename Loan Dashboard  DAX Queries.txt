@@ -1,0 +1,115 @@
+** DAX **
+
+1. Added new column "YEAR" to access only year from "Loan_Date"
+	Year = YEAR('Loan_default'[Loan_Date_DD_MM_YYYY].[Date])
+
+
+2. Created New Measure in Measures Table 1 as "Loan Amount by Purpose"
+   DAX Query :
+	Loan Amount by Purpose = sumx(filter('Loan_default', NOT(ISBLANK('Loan_default'[LoanAmount]))), 'Loan_default'[LoanAmount])
+
+
+3. Created new measure in Measures Table 1 as "Average Income by EmploymentType"
+   DAX Query:
+	Average Income by EmployementType = CALCULATE(AVERAGE('Loan_default'[Income]) , ALLEXCEPT('Loan_default', 								    'Loan_default'[EmploymentType]))
+
+	
+4. Created new measure in Measures Table 1 as  "Default Rate by Employment Type"
+   DAX Query:
+	Default Rate by Employment Type = 
+    		VAR TotalRecords = COUNTROWS(ALL('Loan_default' ))
+
+    		VAR DefaultCases = COUNTROWS(FILTER('Loan_default' , 'Loan_default'[Default] = TRUE()))
+
+    		RETURN
+
+    		CALCULATE(DIVIDE(DefaultCases , TotalRecords ) , ALLEXCEPT('Loan_default',Loan_default[EmploymentType]))
+
+	
+## ALL 	     : ALL is used to remove all filters from table
+## ALLEXCEPT : Filters only perticular visual that is mentioned in condition
+
+
+5. Added column in  Loan_default table as "Age Group"
+	Age Group = 
+		IF('Loan_default'[Age] <=19 , "Teen",
+           	IF('Loan_default'[Age] <=39 , "Adults", 
+            	If('Loan_default'[Age] <=59 , " Middel Age Adults" ,
+		"Senier Citizens" )))
+
+
+6. Created new measure in Measures Table 1 as "Average LoanAmount by Age Group"
+    DAX Query:
+	Average LoanAmount by Age Group = 
+    				AVERAGEX(VALUES('Loan_default'[Age Group]) , AVERAGE('Loan_default'[LoanAmount] ) )
+
+
+7. Created new measure in Measures Table 1 as "Default Rate by Year" 
+   DAX Query:
+	 Default Rate by Year = 
+                    	VAR Default = CALCULATE(COUNTROWS(FILTER('Loan_default','Loan_default'[Default]=TRUE())), 			 					ALLEXCEPT('Loan_default','Loan_default'[Year]))
+
+                    	VAR TotalLoans = CALCULATE(COUNTROWS('Loan_default'),ALLEXCEPT('Loan_default','Loan_default'[Year]))
+
+                    	RETURN
+
+                   	DIVIDE(Default , TotalLoans) *100
+
+
+
+8. Created new measure in measure Table 2 as "Median by Credit Score Bins"
+   DAX Query:
+	Median by Credit Score Bins = 
+                         MEDIANX('Loan_default','Loan_default'[LoanAmount])
+
+
+9.
+
+   Average Loan Amt (High credit ) = 
+                        AVERAGEX(FILTER('Loan_default', 'Loan_default'[Credit Score Bins]="High"), 'Loan_default'[LoanAmount])
+
+
+10. 
+	Total Loan (Credit Bins) = 
+                    CALCULATE(SUM('Loan_default'[LoanAmount]),'Loan_default'[Age Group]="Adults" ,
+                    ALLEXCEPT('Loan_default','Loan_default'[Age], 'Loan_default'[Age Group], 'Loan_default'[CreditScore], 'Loan_default'[Credit Score Bins]))
+
+
+11. 
+	Total Loan (Middle Age Adults) = 
+                        SUMX(FILTER('Loan_default', 'Loan_default'[Age Group] = " Middle Age Adults"),
+                        'Loan_default'[LoanAmount])
+
+
+
+
+12.
+
+Loan by Education Type = 
+            COUNTROWS(FILTER('Loan_default', NOT(ISBLANK(Loan_default[LoanID]))))
+
+
+13.
+YOY Change = 
+    DIVIDE( 
+            CALCULATE(SUM('Loan_default'[LoanAmount]), 'Loan_default'[Year] = YEAR(MAX('Loan_default'[Loan_Date_DD_MM_YYYY]))) - 
+            CALCULATE(SUM('Loan_default'[LoanAmount]), 'Loan_default'[Year] = YEAR(MAX('Loan_default'[Loan_Date_DD_MM_YYYY])) - 1)
+
+            ,
+
+            CALCULATE(SUM('Loan_default'[LoanAmount]), 'Loan_default'[Year] = YEAR(MAX('Loan_default'[Loan_Date_DD_MM_YYYY])) - 1) , 0
+
+          ) * 100
+
+
+14.
+YOY Default Laon Change =
+                    DIVIDE(
+                        CALCULATE(COUNTROWS(FILTER('Loan_default' , 'Loan_default'[Default] = TRUE())), 'Loan_default'[Year] = 					YEAR(MAX('Loan_default'[Loan_Date_DD_MM_YYYY])))  - 
+                         CALCULATE(COUNTROWS(FILTER('Loan_default', 'Loan_default'[Default] = TRUE())), 'Loan_default'[Year] = 						YEAR(MAX('Loan_default'[Loan_Date_DD_MM_YYYY]))-1)
+
+                        ,
+
+                        CALCULATE(COUNTROWS(FILTER('Loan_default', 'Loan_default'[Default] = TRUE())), 'Loan_default'[Year] = 					YEAR(MAX('Loan_default'[Loan_Date_DD_MM_YYYY]))-1) , 0) * 100
+
+
